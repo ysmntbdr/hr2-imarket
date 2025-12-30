@@ -1,0 +1,10 @@
+# Enable Rewrite Engine
+RewriteEngine On
+
+# Set base if needed (remove or edit if not in subfolder)
+# RewriteBase /
+
+# No redirect rules — avoids redirect loops
+
+# Set default index
+DirectoryIndex index.php
