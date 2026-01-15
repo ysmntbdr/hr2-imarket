@@ -379,7 +379,7 @@ $current_user = getCurrentEmployee();
                     <div class="d-flex align-items-center justify-content-end gap-3">
                         <div class="text-end">
                             <small class="text-muted d-block">Last Updated</small>
-                            <strong><?= date('H:i') ?></strong>
+                            <strong id="lastUpdatedTime"><?= date('g:i A') ?></strong>
                         </div>
                         <div class="bg-primary bg-opacity-10 rounded-circle p-3">
                             <i class="fas fa-sync-alt text-primary"></i>
@@ -593,7 +593,7 @@ $current_user = getCurrentEmployee();
                                     <div class="flex-grow-1">
                                         <div class="fw-medium"><?= htmlspecialchars($claim['full_name']) ?></div>
                                         <small class="text-muted">
-                                            <?= htmlspecialchars($claim['claim_type']) ?> - $<?= number_format($claim['amount'], 2) ?>
+                                            <?= htmlspecialchars($claim['claim_type'] ?? 'Expense') ?> - ₱<?= number_format($claim['amount'] ?? 0, 2) ?>
                                         </small>
                                     </div>
                                     <span class="status-badge status-<?= $claim['status'] ?>">
@@ -754,6 +754,20 @@ $current_user = getCurrentEmployee();
                 });
             }
         }
+        
+        // Update time every minute
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('lastUpdatedTime').textContent = displayHours + ':' + displayMinutes + ' ' + ampm;
+        }
+        
+        // Update time immediately and then every minute
+        setInterval(updateTime, 60000);
         
         // Auto-refresh data every 5 minutes
         setInterval(function() {

@@ -75,14 +75,58 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as ready_1_2_years FROM succession_plans WHERE readiness_level = 'medium'");
     $stats['ready_1_2_years'] = $stmt->fetch()['ready_1_2_years'] ?? 0;
     
+    $stmt = $pdo->query("SELECT COUNT(DISTINCT e.id) as resigning FROM employees e WHERE e.status IN ('inactive', 'resigned') AND e.position IS NOT NULL AND e.position != ''");
+    $stats['resigning'] = $stmt->fetch()['resigning'] ?? 0;
+    
     $stats['key_positions'] = count($key_positions);
+    
+    // Get resigning employees and their potential successors
+    $resignation_recommendations = [];
+    $stmt = $pdo->query("
+        SELECT id, full_name, position, department, status
+        FROM employees 
+        WHERE status IN ('inactive', 'resigned') 
+        AND position IS NOT NULL 
+        AND position != ''
+        ORDER BY full_name
+    ");
+    $resigning_employees = $stmt->fetchAll();
+    
+    foreach ($resigning_employees as $resigning) {
+        // Find succession plans where target_position matches the resigning employee's position
+        $stmt = $pdo->prepare("
+            SELECT sp.*, e.full_name, e.department, e.position as current_pos
+            FROM succession_plans sp
+            JOIN employees e ON sp.employee_id = e.id
+            WHERE sp.target_position = ? 
+            AND e.status = 'active'
+            ORDER BY 
+                CASE sp.readiness_level
+                    WHEN 'ready_now' THEN 1
+                    WHEN 'ready_1_2_years' THEN 2
+                    WHEN 'ready_3_5_years' THEN 3
+                    ELSE 4
+                END,
+                sp.created_at DESC
+        ");
+        $stmt->execute([$resigning['position']]);
+        $potential_successors = $stmt->fetchAll();
+        
+        if (!empty($potential_successors)) {
+            $resignation_recommendations[] = [
+                'resigning_employee' => $resigning,
+                'successors' => $potential_successors
+            ];
+        }
+    }
     
 } catch (Exception $e) {
     $error_message = "Database error: " . $e->getMessage();
     $succession_plans = [];
     $employees = [];
     $key_positions = [];
-    $stats = ['total_plans' => 0, 'ready_now' => 0, 'ready_1_2_years' => 0, 'key_positions' => 0];
+    $stats = ['total_plans' => 0, 'ready_now' => 0, 'ready_1_2_years' => 0, 'key_positions' => 0, 'resigning' => 0];
+    $resignation_recommendations = [];
 }
 
 $current_user = getCurrentEmployee();
@@ -233,6 +277,76 @@ $current_user = getCurrentEmployee();
             </div>
         </div>
 
+        <!-- Resignation Recommendations -->
+        <?php if (!empty($resignation_recommendations)): ?>
+        <div class="content-card border-warning border-2">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Succession Recommendations for Resigning Employees
+                </h5>
+                <span class="badge bg-warning text-dark"><?= count($resignation_recommendations) ?> Position<?= count($resignation_recommendations) > 1 ? 's' : '' ?> at Risk</span>
+            </div>
+            
+            <?php foreach ($resignation_recommendations as $recommendation): ?>
+                <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-user-times fa-2x me-3 mt-1"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="alert-heading mb-2">
+                                <strong><?= htmlspecialchars($recommendation['resigning_employee']['full_name']) ?></strong> 
+                                is resigning from 
+                                <strong><?= htmlspecialchars($recommendation['resigning_employee']['position']) ?></strong>
+                            </h6>
+                            <p class="mb-2 text-muted">
+                                <i class="fas fa-building me-1"></i>
+                                Department: <?= htmlspecialchars($recommendation['resigning_employee']['department']) ?>
+                            </p>
+                            <hr>
+                            <p class="mb-2 fw-bold">Recommended Successors:</p>
+                            <div class="row g-3">
+                                <?php foreach ($recommendation['successors'] as $successor): ?>
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card border-success">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title mb-0 fw-bold">
+                                                        <?= htmlspecialchars($successor['full_name']) ?>
+                                                    </h6>
+                                                    <span class="readiness-badge readiness-<?= $successor['readiness_level'] ?>">
+                                                        <?= ucfirst(str_replace('_', ' ', $successor['readiness_level'])) ?>
+                                                    </span>
+                                                </div>
+                                                <p class="card-text small mb-1">
+                                                    <strong>Current:</strong> <?= htmlspecialchars($successor['current_pos']) ?>
+                                                </p>
+                                                <p class="card-text small mb-1">
+                                                    <strong>Target:</strong> 
+                                                    <span class="text-primary"><?= htmlspecialchars($successor['target_position']) ?></span>
+                                                </p>
+                                                <?php if (!empty($successor['development_notes'])): ?>
+                                                    <p class="card-text small text-muted mb-0">
+                                                        <em><?= htmlspecialchars(substr($successor['development_notes'], 0, 100)) ?><?= strlen($successor['development_notes']) > 100 ? '...' : '' ?></em>
+                                                    </p>
+                                                <?php endif; ?>
+                                                <?php if (!empty($successor['target_date'])): ?>
+                                                    <p class="card-text small mb-0 mt-2">
+                                                        <i class="fas fa-calendar-alt me-1"></i>
+                                                        Target Date: <?= date('M d, Y', strtotime($successor['target_date'])) ?>
+                                                    </p>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- Key Positions -->
         <div class="content-card">
             <h5 class="mb-3">
@@ -254,15 +368,15 @@ $current_user = getCurrentEmployee();
                     <tbody>
                         <?php foreach ($key_positions as $position): ?>
                             <tr>
-                                <td class="fw-medium"><?= htmlspecialchars($position['position_title']) ?></td>
-                                <td><?= htmlspecialchars($position['department']) ?></td>
+                                <td class="fw-medium"><?= htmlspecialchars($position['target_position']) ?></td>
+                                <td>N/A</td>
                                 <td>
-                                    <span class="readiness-badge criticality-<?= $position['criticality_level'] ?>">
-                                        <?= ucfirst($position['criticality_level']) ?>
+                                    <span class="readiness-badge criticality-medium">
+                                        N/A
                                     </span>
                                 </td>
-                                <td><?= htmlspecialchars($position['required_skills']) ?></td>
-                                <td><?= $position['succession_depth'] ?></td>
+                                <td>N/A</td>
+                                <td>N/A</td>
                                 <td><?= $position['succession_count'] ?></td>
                             </tr>
                         <?php endforeach; ?>
