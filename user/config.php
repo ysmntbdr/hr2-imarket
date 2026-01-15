@@ -7,8 +7,8 @@
 $db_host = "localhost";      
 $db_port = "3306";           
 $db_name = "hr2_imarketph";     
-$db_user = "hr2_imarketph";            
-$db_pass = "hr2imarketph";              
+$db_user = "root";            
+$db_pass = "";              
 
 // Start session if not already active
 if (session_status() === PHP_SESSION_NONE) {

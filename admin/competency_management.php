@@ -798,10 +798,6 @@ $current_user = getCurrentEmployee();
                             <i class="fas fa-book text-primary me-2"></i>
                             Competency Library Management
                         </h5>
-                        <p class="section-description mb-0">
-                            <strong>Admin Role:</strong> Create, update, and delete competencies in the framework. 
-                            Click on any competency to view detailed information, assigned employees, and assessment history.
-                        </p>
                     </div>
                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCompetencyModal">
                         <i class="fas fa-plus me-1"></i>Add New
@@ -894,10 +890,7 @@ $current_user = getCurrentEmployee();
                     <i class="fas fa-user-check text-success me-2"></i>
                     Employee Competency Assessments
                 </h5>
-                <p class="section-description mb-0">
-                    <strong>Admin Role:</strong> Assess and record employee competency levels. Assign competencies to individuals or teams, 
-                    track progress over time, and review assessment history.
-                </p>
+                
             </div>
 
             <!-- Assessment Form -->
