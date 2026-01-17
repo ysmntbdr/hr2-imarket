@@ -170,6 +170,7 @@ if (isset($_GET['logout'])) {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
             position: relative;
             overflow: hidden;
         }
@@ -177,17 +178,33 @@ if (isset($_GET['logout'])) {
         .login-left::before {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
-            animation: float 20s infinite linear;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(75, 197, 236, 0.85), rgba(59, 163, 204, 0.85));
+            z-index: 1;
         }
 
-        @keyframes float {
-            0% { transform: translateX(0) translateY(0); }
-            100% { transform: translateX(-50px) translateY(-50px); }
+        .login-left::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('../assets/LOGO.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 0;
+        }
+
+        /* Fallback if logo not found in ../assets/ */
+        @supports not (background-image: url('../assets/LOGO.png')) {
+            .login-left::after {
+                background-image: url('assets/LOGO.png');
+            }
         }
 
         .login-right {
@@ -336,18 +353,7 @@ if (isset($_GET['logout'])) {
     <div class="login-container">
         <!-- Left Side - Branding -->
         <div class="login-left">
-            <div class="brand-logo">
-                <i class="fas fa-shield-alt"></i>
-            </div>
-            <h1 class="login-title">HR Admin Portal</h1>
-            <p class="login-subtitle">Secure access to human resources management system</p>
-            
-            <ul class="features">
-                <li><i class="fas fa-users"></i> Employee Management</li>
-                <li><i class="fas fa-chart-line"></i> Performance Analytics</li>
-                <li><i class="fas fa-graduation-cap"></i> Learning & Development</li>
-                <li><i class="fas fa-shield-alt"></i> Secure & Compliant</li>
-            </ul>
+            <!-- Logo displayed as background -->
         </div>
 
         <!-- Right Side - Login Form -->

@@ -257,25 +257,25 @@ if (isset($_GET['success'])) {
     <div class="row g-4 mb-4">
       <div class="col-xl-3 col-md-6">
         <div class="stat-card animate-slide-up" style="animation-delay: 0.1s;">
-          <div class="stat-value text-primary">$<?= number_format($monthly_stats['total_claimed'] ?? 0, 2) ?></div>
+          <div class="stat-value text-primary">₱<?= number_format($monthly_stats['total_claimed'] ?? 0, 2) ?></div>
           <div class="stat-label">Total Claimed This Month</div>
         </div>
       </div>
       <div class="col-xl-3 col-md-6">
         <div class="stat-card animate-slide-up" style="animation-delay: 0.2s;">
-          <div class="stat-value text-success">$<?= number_format($monthly_stats['approved_amount'] ?? 0, 2) ?></div>
+          <div class="stat-value text-success">₱<?= number_format($monthly_stats['approved_amount'] ?? 0, 2) ?></div>
           <div class="stat-label">Approved Amount</div>
         </div>
       </div>
       <div class="col-xl-3 col-md-6">
         <div class="stat-card animate-slide-up" style="animation-delay: 0.3s;">
-          <div class="stat-value text-warning">$<?= number_format($monthly_stats['pending_amount'] ?? 0, 2) ?></div>
+          <div class="stat-value text-warning">₱<?= number_format($monthly_stats['pending_amount'] ?? 0, 2) ?></div>
           <div class="stat-label">Pending Approval</div>
         </div>
       </div>
       <div class="col-xl-3 col-md-6">
         <div class="stat-card animate-slide-up" style="animation-delay: 0.4s;">
-          <div class="stat-value text-danger">$<?= number_format($monthly_stats['rejected_amount'] ?? 0, 2) ?></div>
+          <div class="stat-value text-danger">₱<?= number_format($monthly_stats['rejected_amount'] ?? 0, 2) ?></div>
           <div class="stat-label">Rejected Amount</div>
         </div>
       </div>
@@ -299,7 +299,7 @@ if (isset($_GET['success'])) {
                   <option value="">Select category</option>
                   <?php foreach ($claim_categories as $category): ?>
                     <option value="<?= $category['id'] ?>" data-max="<?= $category['max_amount'] ?>">
-                      <?= htmlspecialchars($category['name']) ?> (Max: $<?= number_format($category['max_amount'], 2) ?>)
+                      <?= htmlspecialchars($category['name']) ?> (Max: ₱<?= number_format($category['max_amount'], 2) ?>)
                     </option>
                   <?php endforeach; ?>
                 </select>
@@ -308,7 +308,7 @@ if (isset($_GET['success'])) {
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Amount</label>
                 <div class="input-group">
-                  <span class="input-group-text">$</span>
+                  <span class="input-group-text">₱</span>
                   <input type="number" class="form-control" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
                 </div>
                 <small class="text-muted" id="amount-limit"></small>
@@ -353,7 +353,7 @@ if (isset($_GET['success'])) {
               <div class="col-12">
                 <div class="category-card">
                   <h6 class="text-primary mb-2"><?= htmlspecialchars($category['name']) ?></h6>
-                  <div class="fw-bold text-success mb-1">Max: $<?= number_format($category['max_amount'], 2) ?></div>
+                  <div class="fw-bold text-success mb-1">Max: ₱<?= number_format($category['max_amount'], 2) ?></div>
                   <small class="text-muted">
                     <?= $category['requires_receipt'] ? 'Receipt Required' : 'Receipt Optional' ?>
                   </small>
@@ -397,7 +397,7 @@ if (isset($_GET['success'])) {
               <tr>
                 <td><span class="badge bg-light text-dark"><?= htmlspecialchars($claim['claim_number']) ?></span></td>
                 <td><?= htmlspecialchars($claim['category_name']) ?></td>
-                <td class="fw-bold">$<?= number_format($claim['amount'], 2) ?></td>
+                <td class="fw-bold">₱<?= number_format($claim['amount'], 2) ?></td>
                 <td><?= date('M j, Y', strtotime($claim['expense_date'])) ?></td>
                 <td>
                   <span class="status-badge bg-<?= $claim['status'] === 'approved' ? 'success' : ($claim['status'] === 'pending' ? 'warning' : 'danger') ?>">
@@ -441,7 +441,7 @@ if (isset($_GET['success'])) {
             <h6 class="text-primary mb-2">
               <i class="fas fa-receipt me-2"></i>Keep Your Receipts
             </h6>
-            <p class="mb-0 small">Always keep original receipts for expenses over $25. Digital copies are acceptable for smaller amounts.</p>
+            <p class="mb-0 small">Always keep original receipts for expenses over ₱25. Digital copies are acceptable for smaller amounts.</p>
           </div>
         </div>
         <div class="col-md-4">
@@ -481,7 +481,7 @@ if (isset($_GET['success'])) {
               </div>
               <div class="col-sm-6">
                 <strong>Amount:</strong><br>
-                $<?= number_format($claim['amount'], 2) ?>
+                ₱<?= number_format($claim['amount'], 2) ?>
               </div>
               <div class="col-sm-6">
                 <strong>Date:</strong><br>
@@ -523,7 +523,7 @@ if (isset($_GET['success'])) {
         
         if (maxAmount) {
           amountInput.max = maxAmount;
-          amountLimit.textContent = `Maximum allowed: $${parseFloat(maxAmount).toLocaleString()}`;
+          amountLimit.textContent = `Maximum allowed: ₱${parseFloat(maxAmount).toLocaleString()}`;
         } else {
           amountLimit.textContent = '';
         }
@@ -556,7 +556,7 @@ if (isset($_GET['success'])) {
         
         if (maxAmount && amount > maxAmount) {
           e.preventDefault();
-          alert(`Amount cannot exceed $${maxAmount.toLocaleString()}`);
+          alert(`Amount cannot exceed ₱${maxAmount.toLocaleString()}`);
         }
       });
     });

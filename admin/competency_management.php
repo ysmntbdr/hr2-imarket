@@ -183,6 +183,20 @@ try {
     ");
     $stats['competency_gaps'] = $stmt->fetchAll();
     
+    // Get specific competency gaps for each employee
+    $competency_gaps_details = [];
+    foreach ($stats['competency_gaps'] as $gap) {
+        $stmt = $pdo->prepare("
+            SELECT c.id, c.name, c.category, ec.proficiency_level
+            FROM employee_competencies ec
+            JOIN competencies c ON ec.competency_id = c.id
+            WHERE ec.employee_id = ? AND ec.proficiency_level <= 2
+            ORDER BY ec.proficiency_level ASC, c.name ASC
+        ");
+        $stmt->execute([$gap['id']]);
+        $competency_gaps_details[$gap['id']] = $stmt->fetchAll();
+    }
+    
     // Proficiency distribution
     $stmt = $pdo->query("
         SELECT proficiency_level, COUNT(*) as count
@@ -247,6 +261,7 @@ try {
     $proficiency_distribution = [];
     $competency_details = null;
     $competency_employees = [];
+    $competency_gaps_details = [];
 }
 
 $current_user = getCurrentEmployee();
@@ -533,16 +548,8 @@ $current_user = getCurrentEmployee();
                 <div class="col-md-8">
                     <h1 class="mb-1">
                         <i class="fas fa-clipboard-check text-primary me-2"></i>
-                        Competency Management System
+                        Competency Management
                     </h1>
-                    <p class="text-muted mb-0">
-                        <strong>Admin Portal:</strong> Manage competency framework, assess employees, track progress, and analyze competency gaps
-                    </p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCompetencyModal">
-                        <i class="fas fa-plus me-2"></i>Add Competency
-                    </button>
                 </div>
             </div>
         </div>
@@ -604,7 +611,7 @@ $current_user = getCurrentEmployee();
 
         <!-- Analytics Dashboard -->
         <div class="row mb-4">
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="analytics-card">
                     <h6 class="mb-3">
                         <i class="fas fa-chart-bar text-primary me-2"></i>
@@ -613,30 +620,6 @@ $current_user = getCurrentEmployee();
                     <div class="chart-container">
                         <canvas id="proficiencyChart"></canvas>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="analytics-card">
-                    <h6 class="mb-3">
-                        <i class="fas fa-trophy text-warning me-2"></i>
-                        Top 5 Competencies (Most Assessed)
-                    </h6>
-                    <?php if (empty($stats['top_competencies'])): ?>
-                        <p class="text-muted text-center py-4">No assessment data available</p>
-                    <?php else: ?>
-                        <div class="list-group list-group-flush">
-                            <?php foreach ($stats['top_competencies'] as $idx => $comp): ?>
-                                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                    <div>
-                                        <span class="badge bg-primary me-2">#<?= $idx + 1 ?></span>
-                                        <strong><?= htmlspecialchars($comp['name']) ?></strong>
-                                        <br><small class="text-muted"><?= htmlspecialchars($comp['category']) ?></small>
-                                    </div>
-                                    <span class="badge bg-success"><?= $comp['assessment_count'] ?> assessments</span>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -649,16 +632,32 @@ $current_user = getCurrentEmployee();
                 Competency Gaps Identified
             </h6>
             <p class="text-muted small mb-3">Employees with low proficiency levels (≤2) requiring attention:</p>
-            <div class="row g-2">
+            <div class="row g-3">
                 <?php foreach (array_slice($stats['competency_gaps'], 0, 5) as $gap): ?>
-                    <div class="col-md-4">
-                        <div class="p-2 bg-white rounded border">
-                            <strong><?= htmlspecialchars($gap['full_name']) ?></strong>
-                            <br><small class="text-muted"><?= htmlspecialchars($gap['department']) ?></small>
-                            <div class="mt-1">
-                                <span class="badge bg-danger"><?= $gap['low_competencies'] ?> low</span>
-                                <span class="badge bg-secondary">Avg: <?= number_format($gap['avg_proficiency'], 1) ?>/5</span>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-white rounded border">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <strong><?= htmlspecialchars($gap['full_name']) ?></strong>
+                                    <br><small class="text-muted"><?= htmlspecialchars($gap['department']) ?></small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-danger"><?= $gap['low_competencies'] ?> gap<?= $gap['low_competencies'] != 1 ? 's' : '' ?></span>
+                                    <br><small class="text-muted">Avg: <?= number_format($gap['avg_proficiency'], 1) ?>/5</small>
+                                </div>
                             </div>
+                            <?php if (isset($competency_gaps_details[$gap['id']]) && !empty($competency_gaps_details[$gap['id']])): ?>
+                                <div class="mt-2 pt-2 border-top">
+                                    <small class="text-muted d-block mb-1"><strong>Gap Competencies:</strong></small>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <?php foreach ($competency_gaps_details[$gap['id']] as $comp_gap): ?>
+                                            <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="Level <?= $comp_gap['proficiency_level'] ?> - <?= htmlspecialchars($comp_gap['category']) ?>">
+                                                <?= htmlspecialchars($comp_gap['name']) ?> (L<?= $comp_gap['proficiency_level'] ?>)
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -886,72 +885,17 @@ $current_user = getCurrentEmployee();
         <!-- Section 2: Employee Competency Assessments -->
         <div class="content-card">
             <div class="section-header">
-                <h5>
-                    <i class="fas fa-user-check text-success me-2"></i>
-                    Employee Competency Assessments
-                </h5>
-                
-            </div>
-
-            <!-- Assessment Form -->
-            <div class="bg-light p-4 rounded mb-4">
-                <h6 class="mb-3">
-                    <i class="fas fa-edit text-primary me-2"></i>
-                    Record New Assessment
-                </h6>
-                <form method="POST">
-                    <input type="hidden" name="action" value="update_employee_competency">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-medium">
-                                Select Employee
-                                <i class="fas fa-question-circle text-muted ms-1" data-bs-toggle="tooltip" title="Choose the employee to assess"></i>
-                            </label>
-                            <select name="employee_id" class="form-select" required>
-                                <option value="">Choose Employee...</option>
-                                <?php foreach ($employees as $employee): ?>
-                                    <option value="<?= $employee['id'] ?>">
-                                        <?= htmlspecialchars($employee['full_name']) ?> - <?= htmlspecialchars($employee['department']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-medium">
-                                Select Competency
-                                <i class="fas fa-question-circle text-muted ms-1" data-bs-toggle="tooltip" title="Select the competency to assess"></i>
-                            </label>
-                            <select name="competency_id" class="form-select" required>
-                                <option value="">Choose Competency...</option>
-                                <?php foreach ($competencies as $competency): ?>
-                                    <option value="<?= $competency['id'] ?>">
-                                        <?= htmlspecialchars($competency['name']) ?> (<?= htmlspecialchars($competency['category']) ?>)
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label fw-medium">
-                                Proficiency Level
-                                <i class="fas fa-question-circle text-muted ms-1" data-bs-toggle="tooltip" title="1=Beginner, 2=Basic, 3=Intermediate, 4=Advanced, 5=Expert"></i>
-                            </label>
-                            <select name="proficiency_level" class="form-select" required>
-                                <option value="">Level...</option>
-                                <option value="1">1 - Beginner</option>
-                                <option value="2">2 - Basic</option>
-                                <option value="3">3 - Intermediate</option>
-                                <option value="4">4 - Advanced</option>
-                                <option value="5">5 - Expert</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">&nbsp;</label>
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="fas fa-save me-1"></i>Save
-                            </button>
-                        </div>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5>
+                            <i class="fas fa-user-check text-success me-2"></i>
+                            Employee Competency Assessments
+                        </h5>
                     </div>
-                </form>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#assessmentModal">
+                        <i class="fas fa-plus me-2"></i>Record New Assessment
+                    </button>
+                </div>
             </div>
 
             <!-- Recent Assessments Table -->
@@ -964,7 +908,10 @@ $current_user = getCurrentEmployee();
             <?php if (empty($assessments)): ?>
                 <div class="text-center py-4">
                     <i class="fas fa-clipboard-list fa-2x text-muted mb-2"></i>
-                    <p class="text-muted mb-0">No assessments recorded yet. Use the form above to create the first assessment.</p>
+                    <p class="text-muted mb-3">No assessments recorded yet. Click the button above to create the first assessment.</p>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#assessmentModal">
+                        <i class="fas fa-plus me-2"></i>Record New Assessment
+                    </button>
                 </div>
             <?php else: ?>
                 <div class="table-responsive">
@@ -1041,6 +988,93 @@ $current_user = getCurrentEmployee();
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">Add Competency</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Assessment Modal -->
+    <div class="modal fade" id="assessmentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-check me-2"></i>Record New Assessment
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST">
+                    <input type="hidden" name="action" value="update_employee_competency">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">
+                                Filter by Department
+                                <i class="fas fa-question-circle text-muted ms-1" data-bs-toggle="tooltip" title="Select a department to filter employees"></i>
+                            </label>
+                            <select id="filter_department" class="form-select">
+                                <option value="">All Departments</option>
+                                <?php foreach ($departments as $dept): ?>
+                                    <option value="<?= htmlspecialchars($dept['department']) ?>">
+                                        <?= htmlspecialchars($dept['department']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">
+                                Select Employee <span class="text-danger">*</span>
+                                <i class="fas fa-question-circle text-muted ms-1" data-bs-toggle="tooltip" title="Choose the employee to assess"></i>
+                            </label>
+                            <select name="employee_id" id="employee_select" class="form-select" required>
+                                <option value="">Choose Employee...</option>
+                                <?php foreach ($employees as $employee): ?>
+                                    <option value="<?= $employee['id'] ?>" data-department="<?= htmlspecialchars($employee['department']) ?>">
+                                        <?= htmlspecialchars($employee['full_name']) ?> - <?= htmlspecialchars($employee['department']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">
+                                Select Competency <span class="text-danger">*</span>
+                                <i class="fas fa-question-circle text-muted ms-1" data-bs-toggle="tooltip" title="Select the competency to assess"></i>
+                            </label>
+                            <select name="competency_id" class="form-select" required>
+                                <option value="">Choose Competency...</option>
+                                <?php foreach ($competencies as $competency): ?>
+                                    <option value="<?= $competency['id'] ?>">
+                                        <?= htmlspecialchars($competency['name']) ?> (<?= htmlspecialchars($competency['category']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">
+                                Proficiency Level <span class="text-danger">*</span>
+                                <i class="fas fa-question-circle text-muted ms-1" data-bs-toggle="tooltip" title="1=Beginner, 2=Basic, 3=Intermediate, 4=Advanced, 5=Expert"></i>
+                            </label>
+                            <select name="proficiency_level" class="form-select" required>
+                                <option value="">Select Level...</option>
+                                <option value="1">1 - Beginner</option>
+                                <option value="2">2 - Basic</option>
+                                <option value="3">3 - Intermediate</option>
+                                <option value="4">4 - Advanced</option>
+                                <option value="5">5 - Expert</option>
+                            </select>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Proficiency levels range from 1 (Beginner) to 5 (Expert). Select the appropriate level based on the employee's demonstrated competency.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i>Save Assessment
+                        </button>
                     </div>
                 </form>
             </div>
@@ -1261,6 +1295,50 @@ $current_user = getCurrentEmployee();
             // Uncheck all checkboxes
             document.querySelectorAll('#bulkAssignModal input[type="checkbox"]').forEach(cb => cb.checked = false);
         }
+
+        // Department filter for employee assessment
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterDept = document.getElementById('filter_department');
+            const employeeSelect = document.getElementById('employee_select');
+            
+            if (filterDept && employeeSelect) {
+                filterDept.addEventListener('change', function() {
+                    const selectedDept = this.value;
+                    const options = employeeSelect.querySelectorAll('option');
+                    
+                    // Show/hide options based on department filter
+                    options.forEach(option => {
+                        if (option.value === '') {
+                            // Always show the "Choose Employee..." option
+                            option.style.display = '';
+                        } else {
+                            const optionDept = option.getAttribute('data-department');
+                            if (selectedDept === '' || optionDept === selectedDept) {
+                                option.style.display = '';
+                            } else {
+                                option.style.display = 'none';
+                            }
+                        }
+                    });
+                    
+                    // Reset employee selection when filter changes
+                    employeeSelect.value = '';
+                });
+                
+                // Reset filter when modal is closed
+                const assessmentModal = document.getElementById('assessmentModal');
+                if (assessmentModal) {
+                    assessmentModal.addEventListener('hidden.bs.modal', function() {
+                        filterDept.value = '';
+                        employeeSelect.value = '';
+                        // Show all options again
+                        employeeSelect.querySelectorAll('option').forEach(option => {
+                            option.style.display = '';
+                        });
+                    });
+                }
+            }
+        });
 
         // Sidebar toggle functionality
         function toggleSidebar() {

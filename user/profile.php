@@ -10,20 +10,20 @@ $current_user = getCurrentEmployee();
 $user = [
     'id' => 1,
     'employee_id' => 'EMP001',
-    'full_name' => 'John Doe',
-    'first_name' => 'John',
-    'last_name' => 'Doe',
-    'email' => 'john.doe@company.com',
-    'username' => 'jdoe',
+    'full_name' => 'Emerson Firmalan',
+    'first_name' => 'Emerson',
+    'last_name' => 'Firmalan',
+    'email' => 'Elmerbarrientos019@gmail.com',
+    'username' => 'emersonf',
     'role' => 'employee',
     'department' => 'IT',
     'position' => 'Software Developer',
     'hire_date' => '2023-01-15',
     'birth_date' => '1990-05-20',
-    'phone' => '+1234567890',
-    'address' => '123 Main Street, City, State 12345',
-    'emergency_contact_name' => 'Jane Doe',
-    'emergency_contact_phone' => '+1234567891',
+    'phone' => '09947800255',
+    'address' => 'Quezon City',
+    'emergency_contact_name' => 'Jane Firmalan',
+    'emergency_contact_phone' => '09485278110',
     'salary' => 75000.00,
     'status' => 'active',
     'manager_name' => 'Alice Smith',
@@ -43,18 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = "Basic information updated successfully!";
     } elseif ($action === 'update_contact') {
         $message = "Contact information updated successfully!";
-    } elseif ($action === 'change_password') {
-        $current_password = $_POST['current_password'] ?? '';
-        $new_password = $_POST['new_password'] ?? '';
-        $confirm_password = $_POST['confirm_password'] ?? '';
-        
-        if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
-            $error = "All password fields are required.";
-        } elseif ($new_password !== $confirm_password) {
-            $error = "New passwords do not match.";
-        } else {
-            $message = "Password changed successfully!";
-        }
     }
 }
 
@@ -248,7 +236,7 @@ $years_service = $hire_date->diff($today)->y;
         <div class="col-md-3 text-center">
           <div class="progress-circle bg-white bg-opacity-25">
             <div class="text-center">
-              <div class="fs-4 fw-bold">$<?= number_format($user['salary']/1000, 0) ?>K</div>
+              <div class="fs-4 fw-bold">₱<?= number_format($user['salary'], 0) ?></div>
               <small>Annual</small>
             </div>
           </div>
@@ -371,36 +359,6 @@ $years_service = $hire_date->diff($today)->y;
             </div>
           </div>
         </div>
-
-        <!-- Security Settings -->
-        <div class="profile-card animate-slide-up">
-          <h4 class="section-title">
-            <i class="fas fa-shield-alt"></i>
-            Security Settings
-          </h4>
-          <form method="POST">
-            <input type="hidden" name="action" value="change_password">
-            <div class="row g-3">
-              <div class="col-12">
-                <label class="form-label">Current Password</label>
-                <input type="password" class="form-control" name="current_password" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">New Password</label>
-                <input type="password" class="form-control" name="new_password" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Confirm New Password</label>
-                <input type="password" class="form-control" name="confirm_password" required>
-              </div>
-              <div class="col-12">
-                <button type="submit" class="btn btn-warning">
-                  <i class="fas fa-key me-2"></i>Change Password
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
       </div>
 
       <!-- Sidebar Information -->
@@ -520,20 +478,6 @@ $years_service = $hire_date->diff($today)->y;
   <script>
     // Form validation and interactions
     document.addEventListener('DOMContentLoaded', function() {
-      // Password confirmation validation
-      const passwordForm = document.querySelector('form[action*="change_password"]');
-      if (passwordForm) {
-        passwordForm.addEventListener('submit', function(e) {
-          const newPassword = this.querySelector('input[name="new_password"]').value;
-          const confirmPassword = this.querySelector('input[name="confirm_password"]').value;
-          
-          if (newPassword !== confirmPassword) {
-            e.preventDefault();
-            alert('New passwords do not match!');
-          }
-        });
-      }
-
       // Add animation delays to cards
       const cards = document.querySelectorAll('.animate-slide-up');
       cards.forEach((card, index) => {

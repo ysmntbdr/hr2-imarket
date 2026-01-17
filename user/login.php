@@ -119,7 +119,41 @@ if (isset($_GET['logout'])) {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
             text-align: center;
+            position: relative;
+        }
+
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(75, 197, 236, 0.85), rgba(59, 163, 204, 0.85));
+            z-index: 1;
+        }
+
+        .login-left::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('../assets/LOGO.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 0;
+        }
+
+        /* Fallback if logo not found in ../assets/ */
+        @supports not (background-image: url('../assets/LOGO.png')) {
+            .login-left::after {
+                background-image: url('assets/LOGO.png');
+            }
         }
 
         .login-right {
@@ -229,26 +263,7 @@ if (isset($_GET['logout'])) {
                     <div class="row g-0">
                         <!-- Left Side - Branding -->
                         <div class="col-lg-6 login-left">
-                            <div class="company-logo">
-                                <i class="fas fa-building"></i>
-                            </div>
-                            <h2 class="mb-3">Welcome Back!</h2>
-                            <p class="mb-4">Access your HR Employee Self-Service portal to manage your work life efficiently.</p>
-                            
-                            <div class="row text-center">
-                                <div class="col-4">
-                                    <i class="fas fa-users fa-2x mb-2"></i>
-                                    <p class="small">Employee<br>Management</p>
-                                </div>
-                                <div class="col-4">
-                                    <i class="fas fa-chart-line fa-2x mb-2"></i>
-                                    <p class="small">Performance<br>Tracking</p>
-                                </div>
-                                <div class="col-4">
-                                    <i class="fas fa-graduation-cap fa-2x mb-2"></i>
-                                    <p class="small">Learning &<br>Development</p>
-                                </div>
-                            </div>
+                            <!-- Logo displayed as background -->
                         </div>
                         
                         <!-- Right Side - Login Form -->
@@ -306,20 +321,7 @@ if (isset($_GET['logout'])) {
                                     </div>
                                 </form>
                                 
-                                <!-- Demo Credentials -->
-                                <div class="demo-credentials">
-                                    <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Demo Credentials</h6>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <strong>Admin:</strong><br>
-                                            Email: <code>mariankeith13@gmail.com</code><br>
-                                            Password: <code>gatela1313</code>
-                                        </div>
-                                        <div class="col-6">
-                                            <strong>Employee:</strong><br>
-                                            Email: <code>Elmerbarrientos019@gmail.com</code><br>
-                                            Password: <code>password123</code>
-                                        </div>
+                                
                                     </div>
                                 </div>
                             </div>

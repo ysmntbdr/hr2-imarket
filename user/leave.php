@@ -5,6 +5,52 @@ require_once 'auth_check.php';
 $pdo = getPDO();
 $employee_id = getCurrentEmployeeId();
 
+// Get current employee data including gender
+$current_user = getCurrentEmployee();
+
+// Try to get employee gender from database - check all possible field names
+$employee_gender = null;
+try {
+    // First, try to get all columns to see what fields exist
+    $stmt = $pdo->prepare("SELECT * FROM employees WHERE id = ?");
+    $stmt->execute([$employee_id]);
+    $emp_data = $stmt->fetch();
+    
+    if ($emp_data) {
+        // Check for gender or sex field (try both common field names and case variations)
+        $employee_gender = $emp_data['gender'] ?? $emp_data['sex'] ?? 
+                          $emp_data['Gender'] ?? $emp_data['Sex'] ??
+                          $emp_data['GENDER'] ?? $emp_data['SEX'] ??
+                          null;
+        
+        // Also check if it's in the current_user array
+        if (!$employee_gender && isset($current_user)) {
+            $employee_gender = $current_user['gender'] ?? $current_user['sex'] ?? null;
+        }
+        
+        // Normalize gender values (case-insensitive)
+        if ($employee_gender) {
+            $employee_gender = strtolower(trim($employee_gender));
+            // Map common variations to standardized values
+            if (in_array($employee_gender, ['m', 'male', 'man', 'masculine', '1'])) {
+                $employee_gender = 'male';
+            } elseif (in_array($employee_gender, ['f', 'female', 'woman', 'feminine', '0', '2'])) {
+                $employee_gender = 'female';
+            } else {
+                // If value doesn't match known patterns, set to null
+                $employee_gender = null;
+            }
+        }
+    }
+} catch (Exception $e) {
+    // If gender field doesn't exist, log but continue
+    error_log("Gender check error: " . $e->getMessage());
+    $employee_gender = null;
+}
+
+// Debug: Uncomment to check what gender value was found
+// error_log("Employee ID: $employee_id, Gender: " . ($employee_gender ?? 'null'));
+
 // Use existing database tables
 // The database already has 'leaves' table, so we'll work with that
 
@@ -54,6 +100,7 @@ try {
     ];
 }
 
+// Base leave types
 $leave_types = [
     'Annual Leave' => ['max_days' => 25, 'requires_approval' => true],
     'Sick Leave' => ['max_days' => 10, 'requires_approval' => false],
@@ -62,6 +109,29 @@ $leave_types = [
     'Maternity Leave' => ['max_days' => 90, 'requires_approval' => true],
     'Paternity Leave' => ['max_days' => 14, 'requires_approval' => true]
 ];
+
+// Filter out maternity leave for male employees
+// NOTE: If gender field doesn't exist in database, gender will be null
+// For testing: uncomment the line below to force hide maternity leave
+// If gender is explicitly 'male', remove maternity leave
+if ($employee_gender === 'male') {
+    unset($leave_types['Maternity Leave']);
+}
+
+// TEMPORARY FIX: If gender cannot be detected (field doesn't exist in DB),
+// This will hide maternity leave for all users until gender field is properly set up
+// You can comment this out once the gender field exists in your employees table
+if ($employee_gender === null) {
+    // Assume male if gender field doesn't exist (hide maternity leave)
+    // Change this to 'female' or remove if you want maternity leave visible when gender is unknown
+    unset($leave_types['Maternity Leave']);
+}
+
+// Debug output (remove in production) - uncomment to check gender detection
+// For testing: force gender to 'male' if not detected (comment out for production)
+// if ($employee_gender === null) {
+//     // $employee_gender = 'male'; // Force male for testing - REMOVE IN PRODUCTION
+// }
 
 $message = '';
 $error = '';
@@ -75,6 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($leave_type) || empty($start_date) || empty($end_date) || empty($reason)) {
         $error = "All fields are required.";
+    } elseif ($leave_type === 'Maternity Leave' && $employee_gender === 'male') {
+        $error = "Maternity leave is not available for male employees. Please select a different leave type.";
     } else {
         try {
             // Calculate total days
