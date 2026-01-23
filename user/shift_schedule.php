@@ -213,7 +213,10 @@ $recent_attendance = $stmt->fetchAll();
   </style>
 </head>
 <body class="bg-light">
-  <div class="container-fluid p-4">
+  <?php include 'includes/sidebar.php'; ?>
+  
+  <main class="main-content">
+    <div class="container-fluid p-4">
     <!-- Schedule Header -->
     <div class="schedule-header animate-slide-up text-center">
       <h1 class="mb-2">
@@ -559,3 +562,5 @@ $recent_attendance = $stmt->fetchAll();
 
 </body>
 </html>
+
+

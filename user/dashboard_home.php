@@ -468,7 +468,10 @@ $user = [
   </style>
 </head>
 <body class="bg-light">
-  <div class="container-fluid p-4">
+  <?php include 'includes/sidebar.php'; ?>
+  
+  <main class="main-content">
+    <div class="container-fluid p-4">
     <!-- Welcome Header -->
     <div class="dashboard-header welcome-animation">
       <div class="row align-items-center">
@@ -790,3 +793,4 @@ $user = [
 
 </body>
 </html>
+

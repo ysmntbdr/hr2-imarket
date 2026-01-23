@@ -271,7 +271,10 @@ try {
   </style>
 </head>
 <body class="bg-light">
-  <div class="container-fluid p-4">
+  <?php include 'includes/sidebar.php'; ?>
+  
+  <main class="main-content">
+    <div class="container-fluid p-4">
     <!-- Competency Header -->
     <div class="competency-header animate-slide-up text-center">
       <h1 class="mb-2">
@@ -732,6 +735,9 @@ try {
       }, 5000);
     }
   </script>
+
+    </div>
+  </main>
 
 </body>
 </html>

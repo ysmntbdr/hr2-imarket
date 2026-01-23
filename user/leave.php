@@ -351,7 +351,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body class="bg-light">
-  <div class="container-fluid p-4">
+  <?php include 'includes/sidebar.php'; ?>
+  
+  <main class="main-content">
+    <div class="container-fluid p-4">
     <!-- Leave Header -->
     <div class="leave-header animate-slide-up text-center">
       <h1 class="mb-2">
@@ -623,3 +626,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </body>
 </html>
+
+

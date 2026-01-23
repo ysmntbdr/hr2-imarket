@@ -212,7 +212,10 @@ $time_stats = [
   </style>
 </head>
 <body class="bg-light">
-  <div class="container-fluid p-4">
+  <?php include 'includes/sidebar.php'; ?>
+  
+  <main class="main-content">
+    <div class="container-fluid p-4">
     <!-- Timesheet Header -->
     <div class="timesheet-header animate-slide-up text-center">
       <h1 class="mb-2">
@@ -556,3 +559,5 @@ $time_stats = [
 
 </body>
 </html>
+
+

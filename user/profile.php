@@ -211,7 +211,10 @@ $years_service = $hire_date->diff($today)->y;
   </style>
 </head>
 <body class="bg-light">
-  <div class="container-fluid p-4">
+  <?php include 'includes/sidebar.php'; ?>
+  
+  <main class="main-content">
+    <div class="container-fluid">
     <!-- Profile Header -->
     <div class="profile-header animate-slide-up">
       <div class="row align-items-center w-100">
@@ -470,7 +473,7 @@ $years_service = $hire_date->diff($today)->y;
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

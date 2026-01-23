@@ -191,7 +191,10 @@ if ($succession_plan && $succession_plan['target_date']) {
   </style>
 </head>
 <body class="bg-light">
-  <div class="container-fluid p-4">
+  <?php include 'includes/sidebar.php'; ?>
+  
+  <main class="main-content">
+    <div class="container-fluid p-4">
     <!-- Header -->
     <div class="succession-header animate-slide-up">
       <div class="row align-items-center">
@@ -434,3 +437,5 @@ if ($succession_plan && $succession_plan['target_date']) {
 
 </body>
 </html>
+
+

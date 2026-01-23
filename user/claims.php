@@ -228,7 +228,10 @@ if (isset($_GET['success'])) {
   </style>
 </head>
 <body class="bg-light">
-  <div class="container-fluid p-4">
+  <?php include 'includes/sidebar.php'; ?>
+  
+  <main class="main-content">
+    <div class="container-fluid p-4">
     <!-- Claims Header -->
     <div class="claims-header animate-slide-up text-center">
       <h1 class="mb-2">
@@ -564,3 +567,5 @@ if (isset($_GET['success'])) {
 
 </body>
 </html>
+
+
