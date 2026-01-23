@@ -131,7 +131,7 @@ if (isset($_GET['logout'])) {
         }
 
         body {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #94dcf4 100%);
+            background: #353c61;
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -146,15 +146,16 @@ if (isset($_GET['logout'])) {
         }
 
         .login-container {
-            background: white;
+            background: rgba(255, 255, 255, 0.02);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
             overflow: hidden;
             width: 100%;
             max-width: 900px;
             min-height: 500px;
             display: flex;
             animation: slideInUp 0.8s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         @keyframes slideInUp {
@@ -163,9 +164,8 @@ if (isset($_GET['logout'])) {
         }
 
         .login-left {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            color: white;
-            padding: 3rem;
+            background: #353c61;
+            padding: 0;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -175,36 +175,32 @@ if (isset($_GET['logout'])) {
             overflow: hidden;
         }
 
-        .login-left::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(75, 197, 236, 0.85), rgba(59, 163, 204, 0.85));
+        .logo-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 1;
+            min-height: 500px;
         }
 
-        .login-left::after {
-            content: '';
+        .logo-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            filter: brightness(1.05) drop-shadow(0 10px 30px rgba(0, 0, 0, 0.2));
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: url('../assets/LOGO.png');
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-            z-index: 0;
-        }
-
-        /* Fallback if logo not found in ../assets/ */
-        @supports not (background-image: url('../assets/LOGO.png')) {
-            .login-left::after {
-                background-image: url('assets/LOGO.png');
-            }
+            z-index: 10;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         .login-right {
@@ -213,6 +209,42 @@ if (isset($_GET['logout'])) {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+
+        .login-right::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .login-right::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0 20px 20px 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .login-right > * {
+            position: relative;
+            z-index: 1;
         }
 
         .brand-logo {
@@ -235,44 +267,88 @@ if (isset($_GET['logout'])) {
             margin-bottom: 1rem;
             position: relative;
             z-index: 1;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .login-subtitle {
             font-size: 1.1rem;
-            opacity: 0.9;
+            opacity: 0.95;
             margin-bottom: 2rem;
             position: relative;
             z-index: 1;
         }
 
+        .form-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .form-subtitle {
+            color: #495057;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-shadow: 0 1px 5px rgba(255, 255, 255, 0.6);
+        }
+
         .form-control {
-            border: 2px solid #e9ecef;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 12px;
-            padding: 12px 16px;
+            padding: 14px 16px;
             font-size: 1rem;
             transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            color: #212529;
         }
 
         .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(75, 197, 236, 0.25);
+            border-color: rgba(75, 197, 236, 0.8);
+            box-shadow: 0 0 0 0.25rem rgba(75, 197, 236, 0.2);
+            background: rgba(255, 255, 255, 0.85);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: #adb5bd;
         }
 
         .input-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.75rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
         }
 
         .input-group-text {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-right: none;
             border-radius: 12px 0 0 12px;
-            color: #6c757d;
+            color: #495057;
+            padding: 14px 16px;
+            font-size: 1rem;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
         }
 
         .input-group .form-control {
             border-left: none;
             border-radius: 0 12px 12px 0;
+            border-right: 2px solid rgba(255, 255, 255, 0.3);
+            background: transparent;
+        }
+
+        .input-group .form-control:focus {
+            border-right-color: rgba(75, 197, 236, 0.8);
+            background: rgba(255, 255, 255, 0.85);
         }
 
         .btn-primary {
@@ -285,6 +361,7 @@ if (isset($_GET['logout'])) {
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 15px rgba(75, 197, 236, 0.3);
         }
 
         .btn-primary:hover {
@@ -312,6 +389,27 @@ if (isset($_GET['logout'])) {
             border: none;
             padding: 1rem 1.5rem;
             margin-bottom: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(15px) saturate(180%);
+            -webkit-backdrop-filter: blur(15px) saturate(180%);
+        }
+
+        .alert-danger {
+            background: rgba(255, 245, 245, 0.7);
+            color: #c92a2a;
+            border-left: 4px solid #fa5252;
+        }
+
+        .alert-success {
+            background: rgba(240, 249, 255, 0.7);
+            color: #0c5460;
+            border-left: 4px solid #20c997;
+        }
+
+        .alert-info {
+            background: rgba(231, 245, 255, 0.7);
+            color: #0c5460;
+            border-left: 4px solid #4bc5ec;
         }
 
         .features {
@@ -353,12 +451,27 @@ if (isset($_GET['logout'])) {
     <div class="login-container">
         <!-- Left Side - Branding -->
         <div class="login-left">
-            <!-- Logo displayed as background -->
+            <div class="logo-container">
+                <!-- Logo image - try multiple paths -->
+                <img src="logo.png" alt="IMARKET Logo" class="logo-image" id="logoImg"
+                     onerror="this.onerror=null; this.src='assets/logo.png'; this.onerror=handleLogoError;">
+                <div id="logoPlaceholder" style="display: none; color: rgba(255,255,255,0.6); text-align: center; padding: 2rem;">
+                    <i class="fas fa-image" style="font-size: 4rem; margin-bottom: 1rem; display: block; opacity: 0.5;"></i>
+                    <p style="font-size: 0.9rem; line-height: 1.6;">
+                        Logo image not found.<br>
+                        <strong style="color: rgba(255,255,255,0.9);">Please copy logo.png to:</strong><br>
+                        <code style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 5px; display: inline-block; margin-top: 0.5rem; font-size: 0.85rem;">
+                            admin\assets\logo.png
+                        </code>
+                    </p>
+                </div>
+            </div>
         </div>
 
         <!-- Right Side - Login Form -->
         <div class="login-right">
-            <h2 class="mb-4">Welcome Back</h2>
+            <h2 class="form-title">Welcome Back, Admin!</h2>
+            <p class="form-subtitle">Sign in to access your admin dashboard</p>
             
             <?php if ($error_message): ?>
                 <div class="alert alert-danger">
@@ -401,14 +514,7 @@ if (isset($_GET['logout'])) {
                 </button>
             </form>
 
-            <div class="text-center text-muted">
-                <small>
-                    <i class="fas fa-shield-alt me-1"></i>
-                    Secure login system<br>
-                    <i class="fas fa-info-circle me-1"></i>
-                    Use your employee credentials with admin role
-                </small>
-            </div>
+            
         </div>
     </div>
 
@@ -416,12 +522,66 @@ if (isset($_GET['logout'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Handle logo error
+        function handleLogoError(img) {
+            console.error('Logo image failed to load from:', img.src);
+            if (img.src.includes('logo.png') && !img.src.includes('assets')) {
+                // Try assets folder
+                img.src = 'assets/logo.png';
+                return;
+            }
+            img.style.display = 'none';
+            const placeholder = document.getElementById('logoPlaceholder');
+            if (placeholder) {
+                placeholder.style.display = 'block';
+            }
+        }
+        
         // Add some interactive effects
         document.addEventListener('DOMContentLoaded', function() {
-            // Focus on username field
-            const usernameField = document.querySelector('input[name="username"]');
-            if (usernameField && !usernameField.value) {
-                usernameField.focus();
+            // Check if logo image loaded
+            const logoImage = document.getElementById('logoImg');
+            if (logoImage) {
+                console.log('Logo image element found, src:', logoImage.src);
+                
+                logoImage.addEventListener('load', function() {
+                    console.log('Logo image loaded successfully!');
+                    this.style.display = 'block';
+                    this.style.visibility = 'visible';
+                    this.style.opacity = '1';
+                    const placeholder = document.getElementById('logoPlaceholder');
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
+                    }
+                });
+                
+                logoImage.addEventListener('error', function(e) {
+                    console.error('Logo image failed to load:', this.src);
+                    handleLogoError(this);
+                });
+                
+                // Force display
+                logoImage.style.display = 'block';
+                logoImage.style.visibility = 'visible';
+                logoImage.style.opacity = '1';
+                
+                // Check if image failed to load after a delay
+                setTimeout(function() {
+                    if (!logoImage.complete || logoImage.naturalHeight === 0) {
+                        console.warn('Logo image may not have loaded. complete:', logoImage.complete, 'height:', logoImage.naturalHeight);
+                        if (!logoImage.complete) {
+                            handleLogoError(logoImage);
+                        }
+                    }
+                }, 2000);
+            } else {
+                console.error('Logo image element not found!');
+            }
+            
+            // Focus on email field
+            const emailField = document.querySelector('input[name="email"]');
+            if (emailField && !emailField.value) {
+                emailField.focus();
             }
             
             // Add ripple effect to login button

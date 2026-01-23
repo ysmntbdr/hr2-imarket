@@ -9,17 +9,28 @@ try {
         if (isset($_POST['action'])) {
             switch ($_POST['action']) {
                 case 'add_succession_plan':
-                    $stmt = $pdo->prepare("
-                        INSERT INTO succession_plans (employee_id, target_position, 
-                                                    readiness_level, development_notes, target_date, 
-                                                    created_at) 
-                        VALUES (?, ?, ?, ?, ?, NOW())
-                    ");
-                    $stmt->execute([
-                        $_POST['employee_id'], $_POST['target_position'],
-                        $_POST['readiness_level'], $_POST['development_notes'], $_POST['target_date']
-                    ]);
-                    $success_message = "Succession plan created successfully!";
+                    try {
+                        $target_date = !empty($_POST['target_date']) ? $_POST['target_date'] : null;
+                        
+                        $stmt = $pdo->prepare("
+                            INSERT INTO succession_plans (employee_id, target_position, 
+                                                        readiness_level, target_date, 
+                                                        created_at) 
+                            VALUES (?, ?, ?, ?, NOW())
+                        ");
+                        $stmt->execute([
+                            $_POST['employee_id'], 
+                            $_POST['target_position'],
+                            $_POST['readiness_level'], 
+                            $target_date
+                        ]);
+                        $success_message = "Succession plan created successfully!";
+                        // Redirect to prevent form resubmission
+                        header("Location: succession_planning.php?success=1");
+                        exit;
+                    } catch (Exception $e) {
+                        $error_message = "Failed to create succession plan: " . $e->getMessage();
+                    }
                     break;
                     
                 case 'update_readiness':
@@ -53,26 +64,41 @@ try {
     $stmt = $pdo->query("SELECT id, full_name, department, position FROM employees WHERE status = 'active' ORDER BY full_name");
     $employees = $stmt->fetchAll();
     
-    // Get unique target positions (instead of key_positions table)
-    $stmt = $pdo->query("
-        SELECT target_position, 
-               COUNT(*) as succession_count
-        FROM succession_plans 
-        WHERE target_position IS NOT NULL AND target_position != ''
-        GROUP BY target_position
-        ORDER BY succession_count DESC, target_position
-    ");
-    $key_positions = $stmt->fetchAll();
+    // Get unique target positions with additional details (instead of key_positions table)
+    try {
+        $stmt = $pdo->query("
+            SELECT 
+                sp.target_position,
+                COUNT(*) as succession_count,
+                COUNT(DISTINCT e.department) as department_count,
+                GROUP_CONCAT(DISTINCT e.department SEPARATOR ', ') as departments,
+                MIN(CASE 
+                    WHEN sp.readiness_level = 'ready_now' THEN 1
+                    WHEN sp.readiness_level = 'ready_1_2_years' THEN 2
+                    WHEN sp.readiness_level = 'ready_3_5_years' THEN 3
+                    ELSE 4
+                END) as min_readiness_priority
+            FROM succession_plans sp
+            JOIN employees e ON sp.employee_id = e.id
+            WHERE sp.target_position IS NOT NULL AND sp.target_position != ''
+            GROUP BY sp.target_position
+            ORDER BY succession_count DESC, sp.target_position
+        ");
+        $key_positions = $stmt->fetchAll();
+    } catch (Exception $e) {
+        $key_positions = [];
+        error_log("Error fetching key positions: " . $e->getMessage());
+    }
     
     // Get succession statistics
     $stats = [];
     $stmt = $pdo->query("SELECT COUNT(*) as total_plans FROM succession_plans");
     $stats['total_plans'] = $stmt->fetch()['total_plans'] ?? 0;
     
-    $stmt = $pdo->query("SELECT COUNT(*) as ready_now FROM succession_plans WHERE readiness_level = 'high'");
+    $stmt = $pdo->query("SELECT COUNT(*) as ready_now FROM succession_plans WHERE readiness_level = 'ready_now'");
     $stats['ready_now'] = $stmt->fetch()['ready_now'] ?? 0;
     
-    $stmt = $pdo->query("SELECT COUNT(*) as ready_1_2_years FROM succession_plans WHERE readiness_level = 'medium'");
+    $stmt = $pdo->query("SELECT COUNT(*) as ready_1_2_years FROM succession_plans WHERE readiness_level = 'ready_1_2_years'");
     $stats['ready_1_2_years'] = $stmt->fetch()['ready_1_2_years'] ?? 0;
     
     $stmt = $pdo->query("SELECT COUNT(DISTINCT e.id) as resigning FROM employees e WHERE e.status IN ('inactive', 'resigned') AND e.position IS NOT NULL AND e.position != ''");
@@ -127,6 +153,19 @@ try {
     $key_positions = [];
     $stats = ['total_plans' => 0, 'ready_now' => 0, 'ready_1_2_years' => 0, 'key_positions' => 0, 'resigning' => 0];
     $resignation_recommendations = [];
+    $pdo = null; // Ensure $pdo is set even on error
+}
+
+// Ensure $pdo is available for view
+if (!isset($pdo)) {
+    try {
+        $pdo = getPDO();
+    } catch (Exception $e) {
+        $pdo = null;
+        if (!isset($error_message)) {
+            $error_message = "Database connection error: " . $e->getMessage();
+        }
+    }
 }
 
 $current_user = getCurrentEmployee();
@@ -220,9 +259,9 @@ $current_user = getCurrentEmployee();
         </div>
 
         <!-- Success/Error Messages -->
-        <?php if (isset($success_message)): ?>
+        <?php if (isset($success_message) || (isset($_GET['success']) && $_GET['success'] == 1)): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i><?= $success_message ?>
+                <i class="fas fa-check-circle me-2"></i><?= $success_message ?? 'Succession plan created successfully!' ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
@@ -323,12 +362,7 @@ $current_user = getCurrentEmployee();
                                                 <p class="card-text small mb-1">
                                                     <strong>Target:</strong> 
                                                     <span class="text-primary"><?= htmlspecialchars($successor['target_position']) ?></span>
-                                                </p>
-                                                <?php if (!empty($successor['development_notes'])): ?>
-                                                    <p class="card-text small text-muted mb-0">
-                                                        <em><?= htmlspecialchars(substr($successor['development_notes'], 0, 100)) ?><?= strlen($successor['development_notes']) > 100 ? '...' : '' ?></em>
-                                                    </p>
-                                                <?php endif; ?>
+                                </p>
                                                 <?php if (!empty($successor['target_date'])): ?>
                                                     <p class="card-text small mb-0 mt-2">
                                                         <i class="fas fa-calendar-alt me-1"></i>
@@ -353,6 +387,12 @@ $current_user = getCurrentEmployee();
                 <i class="fas fa-key text-primary me-2"></i>
                 Key Positions
             </h5>
+            <?php if (empty($key_positions)): ?>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No key positions identified yet. Create succession plans to populate this list.
+                </div>
+            <?php else: ?>
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead class="table-light">
@@ -367,22 +407,79 @@ $current_user = getCurrentEmployee();
                     </thead>
                     <tbody>
                         <?php foreach ($key_positions as $position): ?>
+                            <?php
+                            // Determine criticality based on succession count and readiness
+                            $criticality = 'low';
+                            if ($position['succession_count'] < 2) {
+                                $criticality = 'high';
+                            } elseif ($position['succession_count'] < 3) {
+                                $criticality = 'medium';
+                            }
+                            
+                            // Get required skills from employees in this position (if any exist)
+                            $position_info = null;
+                            $succession_depth = 0;
+                            if (isset($pdo) && $pdo !== null) {
+                                try {
+                                    $stmt = $pdo->prepare("
+                                        SELECT DISTINCT e.position, e.department
+                                        FROM employees e
+                                        WHERE e.position = ? AND e.status = 'active'
+                                        LIMIT 1
+                                    ");
+                                    $stmt->execute([$position['target_position']]);
+                                    $position_info = $stmt->fetch();
+                                    
+                                    // Calculate succession depth (number of ready successors)
+                                    $stmt = $pdo->prepare("
+                                        SELECT COUNT(*) as depth
+                                        FROM succession_plans
+                                        WHERE target_position = ? 
+                                        AND readiness_level IN ('ready_now', 'ready_1_2_years')
+                                    ");
+                                    $stmt->execute([$position['target_position']]);
+                                    $depth_result = $stmt->fetch();
+                                    $succession_depth = $depth_result['depth'] ?? 0;
+                                } catch (Exception $e) {
+                                    error_log("Error fetching position details: " . $e->getMessage());
+                                }
+                            }
+                            ?>
                             <tr>
                                 <td class="fw-medium"><?= htmlspecialchars($position['target_position']) ?></td>
-                                <td>N/A</td>
                                 <td>
-                                    <span class="readiness-badge criticality-medium">
-                                        N/A
+                                    <?php if (!empty($position['departments'])): ?>
+                                        <?= htmlspecialchars($position['departments']) ?>
+                                    <?php elseif ($position_info && !empty($position_info['department'])): ?>
+                                        <?= htmlspecialchars($position_info['department']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">Multiple</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="readiness-badge criticality-<?= $criticality ?>">
+                                        <?= ucfirst($criticality) ?>
                                     </span>
                                 </td>
-                                <td>N/A</td>
-                                <td>N/A</td>
+                                <td>
+                                    <?php if ($position_info): ?>
+                                        <small class="text-muted">See position requirements</small>
+                                    <?php else: ?>
+                                        <small class="text-muted">To be defined</small>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="badge bg-<?= $succession_depth >= 2 ? 'success' : ($succession_depth >= 1 ? 'warning' : 'danger') ?>">
+                                        <?= $succession_depth ?> successor<?= $succession_depth != 1 ? 's' : '' ?>
+                                    </span>
+                                </td>
                                 <td><?= $position['succession_count'] ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
+            <?php endif; ?>
         </div>
 
         <!-- Succession Plans -->
@@ -391,6 +488,12 @@ $current_user = getCurrentEmployee();
                 <i class="fas fa-users text-primary me-2"></i>
                 Succession Plans
             </h5>
+            <?php if (empty($succession_plans)): ?>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No succession plans found. Click "Add Plan" to create your first succession plan.
+                </div>
+            <?php else: ?>
             <div class="row">
                 <?php foreach ($succession_plans as $plan): ?>
                     <div class="col-lg-6 col-xl-4">
@@ -404,36 +507,42 @@ $current_user = getCurrentEmployee();
                             <div class="row g-2 mb-3">
                                 <div class="col-12">
                                     <small class="text-muted">Current Position:</small>
-                                    <div class="fw-medium"><?= htmlspecialchars($plan['current_pos']) ?></div>
+                                    <div class="fw-medium"><?= htmlspecialchars($plan['current_pos'] ?? 'N/A') ?></div>
                                 </div>
                                 <div class="col-12">
                                     <small class="text-muted">Target Position:</small>
-                                    <div class="fw-medium text-primary"><?= htmlspecialchars($plan['target_position']) ?></div>
+                                    <div class="fw-medium text-primary"><?= htmlspecialchars($plan['target_position'] ?? 'N/A') ?></div>
                                 </div>
                                 <div class="col-12">
                                     <small class="text-muted">Department:</small>
-                                    <div class="fw-medium"><?= htmlspecialchars($plan['department']) ?></div>
+                                    <div class="fw-medium"><?= htmlspecialchars($plan['department'] ?? 'N/A') ?></div>
                                 </div>
                                 <div class="col-12">
-                                    <small class="text-muted">Timeline:</small>
-                                    <div class="fw-medium"><?= htmlspecialchars($plan['timeline']) ?></div>
+                                    <small class="text-muted">Target Date:</small>
+                                    <div class="fw-medium">
+                                        <?php if (!empty($plan['target_date'])): ?>
+                                            <?= date('M d, Y', strtotime($plan['target_date'])) ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">Not set</span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="mb-2">
-                                <small class="text-muted">Development Plan:</small>
-                                <p class="small mb-2"><?= htmlspecialchars($plan['development_plan']) ?></p>
-                            </div>
+                            
                             <div class="text-muted small">
-                                <i class="fas fa-user me-1"></i>
-                                Created by <?= htmlspecialchars($plan['created_by_name'] ?? 'System') ?>
-                                <br>
                                 <i class="fas fa-calendar me-1"></i>
-                                <?= date('M d, Y', strtotime($plan['created_at'])) ?>
+                                Created: <?= date('M d, Y', strtotime($plan['created_at'])) ?>
+                                <?php if (!empty($plan['updated_at']) && $plan['updated_at'] != $plan['created_at']): ?>
+                                    <br>
+                                    <i class="fas fa-edit me-1"></i>
+                                    Updated: <?= date('M d, Y', strtotime($plan['updated_at'])) ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -461,12 +570,8 @@ $current_user = getCurrentEmployee();
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Current Position</label>
-                                <input type="text" name="current_position" class="form-control" required>
-                            </div>
-                            <div class="col-md-6">
                                 <label class="form-label">Target Position</label>
-                                <input type="text" name="target_position" class="form-control" required>
+                                <input type="text" name="target_position" class="form-control" placeholder="e.g., Senior Manager" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Readiness Level</label>
@@ -479,13 +584,11 @@ $current_user = getCurrentEmployee();
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Timeline</label>
-                                <input type="text" name="timeline" class="form-control" placeholder="e.g., 18 months" required>
+                                <label class="form-label">Target Date</label>
+                                <input type="date" name="target_date" class="form-control">
+                                <small class="form-text text-muted">Expected promotion/transition date</small>
                             </div>
-                            <div class="col-12">
-                                <label class="form-label">Development Plan</label>
-                                <textarea name="development_plan" class="form-control" rows="4" placeholder="Describe the development activities, training, and experiences needed..."></textarea>
-                            </div>
+                        
                         </div>
                     </div>
                     <div class="modal-footer">
